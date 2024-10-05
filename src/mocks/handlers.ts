@@ -18,7 +18,7 @@ export const handlers = [
   http.get<LocationsPathParams>("/locations", ({params}) => {
 
     const { page, location_name, robot_id, is_starred } = params;
-    console.log('location',location_name,robot_id)
+   
     // Please implement filtering feature here
     let filter_locations = locations;
     if (location_name) {
