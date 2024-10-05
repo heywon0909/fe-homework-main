@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-import { Location } from "./db";
+import { Location, locations } from "./db";
 
 interface LocationsResult {
   total_count: number;
@@ -17,10 +17,10 @@ interface LocationsPathParams {
 export const handlers = [
   http.get<LocationsPathParams>("/locations", ({ params }) => {
     // Please implement filtering feature here
-
+ 
     const result: LocationsResult = {
       total_count: 0,
-      locations: [],
+      locations: locations,
     };
 
     return HttpResponse.json(result);
