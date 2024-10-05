@@ -80,7 +80,7 @@ export const handlers = [
    
     
 
-    const list = location_ids.includes(data) ? location_ids.filter(v=>v!=data) : location_ids.concat([data])
+    const list = location_ids.includes(data) ? location_ids.filter((v:string)=>v!=data) : location_ids.concat([data])
 
     sessionStorage.setItem(
       "starred_location_ids",
