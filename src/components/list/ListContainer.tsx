@@ -1,22 +1,27 @@
 import { GridColDef } from "@mui/x-data-grid";
 import List, { rowsType } from "./List";
-import {  useCallback, useEffect, useState } from "react";
+import {   useEffect, useState } from "react";
 import { renderRobotStatus } from "../column/RobotStatusColumn";
-import { renderStar } from "../column/StarColumn";
-import { Location } from "../../mocks/db";
+import { StartColumn } from "../column/StarColumn";
 import { renderLocation } from "../column/LoactionColumn";
 import LocationSelect from "../select/Select";
 import * as S from './styled'
 import SearchField from "../searchField/SearchField";
+import { Location, locations } from "../../mocks/db";
+import { useQuery } from "@tanstack/react-query";
+import { paramsType, useLocations } from "../../hooks/useLocations";
+import { debounce } from "@mui/material";
+
+
 
 export default function ListContainer() {
     const columns: GridColDef<(rowsType)[number]>[] = [
-        {
-            field: 'star', headerName: 'star', width: 90, renderCell: renderStar,
-            valueGetter: (value, row) =>
-            row.star == null || row.id == null
-                ? null
-                : { start: row.star, id: row.id },
+    {
+    field: 'star', headerName: 'star', width: 90, renderCell: StartColumn,
+    valueGetter: (value, row) =>
+    row.star == null || row.id == null
+        ? null
+        : { star: row.star, id: row.id },
    },
   {
     field: 'name',
@@ -27,7 +32,7 @@ export default function ListContainer() {
     valueGetter: (value, row) =>
       row.name == null || row.robot == null
         ? null
-        : { name: row.name, robot_enable: row.robot.is_online },
+              : { name: row.name, robot_enable: row.robot.is_online },
   },
   {
     field: 'robot',
@@ -48,55 +53,51 @@ export default function ListContainer() {
     const [rows, setRows] = useState<rowsType>([]);
     const [searchText, setSearchText] = useState<string>('');
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setSearchText(e.target.value);
+    const [params, setParams] = useState<paramsType>({page:'1'});
+    const { locationsQuery, starredQuery } = useLocations(params);
+    const { data: locationsData } = locationsQuery;
+    const { data: starredData } = starredQuery;
     
+
+    useEffect(() => {
+    // 두 데이터가 모두 존재할 때만 setRows 호출
+        if (locationsData && starredData) {
    
-    
-    // useEffect(() => {
-    //      const fetchLocations = async () => {
-    //     try {
-    //         const [starredResponse, locationsResponse] = await Promise.all([
-    //             fetch('/starred_location_ids'),
-    //             fetch('/locations')
-    //         ]);
+        setRows(
+            locationsData.locations.map((v: Location) => {
+               
+            return ({
+            ...v,
+            star: (starredData as unknown as number[])?.includes((v.id)) || false,
+        })
+        })
+        );
+    }
+    }, [locationsData, starredData]);
+        
+  
+    useEffect(() => {
+        let timeout = null;
+        if (searchText) {
+            timeout = setTimeout(() => {
+                 setParams({
+                    page:'1',
+                    location_name: searchText,
+                    robot_id: searchText
+                });
+            }, 500);
+        }
+        return () => clearTimeout(timeout!)
+    },[searchText]);
+ 
 
-    //         const starredData = await starredResponse.json();
-    //         console.log('starredData',starredData)
-    //         const starred_id = starredData.location_ids;
-
-    //         const { locations } = await locationsResponse.json();
-
-    //         const updatedLocations = locations.map((v: Location) => ({
-    //             ...v,
-    //             star: starred_id.includes(v.id),
-    //         }));
-
-    //         setRows(updatedLocations);
-
-    //         console.log('locations', locations);
-    //         console.log('starred_id', starred_id);
-    //     } catch (error) {
-    //         console.error('Error fetching data:', error);
-    //     }
-    // }
-    //     fetchLocations();
-    // }, []);
-
-    // useEffect(() => {
-    //     if (searchText === '') return;
-    //     const timer = setTimeout(() => {
-    //         console.log('Fetching after search text change');
-    //         fetchLocations();
-    //     }, 500);
-
-    //     return () => clearTimeout(timer);
-    // }, [fetchLocations, searchText]);
 
     return (
-        <>
+        <div>
             <S.Flex>
                 <LocationSelect />
                 <SearchField searchText={searchText}  handleSearch={handleSearch}/>
             </S.Flex>
             <List rows={rows} columns={columns} />
-        </>)
+        </div>)
 }
